@@ -43,7 +43,7 @@ def search():
         else:
             create_measure_data(measure_date
                                ,body_heat
-                               );
+                               )
             status_message = "登録が完了しました。"
 
     return render_template("index.html"
