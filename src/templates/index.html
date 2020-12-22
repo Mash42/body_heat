@@ -16,6 +16,7 @@
         <script src="/static/js/vuejs-pagenate_2.1.0.js"></script>
         <script src="/static/js/d3.v5.min.js"></script>
         <script src="/static/js/c3.min.js"></script>
+        <script src="/static/js/d3.layout.cloud.js"></script>
         <!-- My Custom script tags -->
         <script type="text/javascript">
             $(function (){
@@ -29,7 +30,7 @@
                 })
             });
         </script>
-        <title>体温測定</title>
+        <title>体温管理</title>
     </head>
     <body>
         <div class="container mt-1" id="app">
@@ -74,14 +75,14 @@
                         <div class="form-group">
                             <label for="measure_date_id">測定日</label>
                             <input type="date" name="measure_date" id="measure_date_id" 
-                                   class="form-control" min="2020-01-01" 
+                                   class="form-control" min="2020-01-01" max="2999-12-31"
                                    placeholder="日付を入力してください" required>
                         </div>
                         <div class="form-group">
                             <label for="body_heat_id">体温(35.0～49.9の範囲内で入力可能)</label>
                             <input type="text" name="body_heat" id="body_heat_id" 
                                    class="form-control" placeholder="体温を入力してください。(小数点第一位まで)"
-                                   pattern="^[3-4]{1}[05-9]{1}\.[0-9]{1}$" required>
+                                   pattern="^([3-4]{1}[5-9]{1}\.[0-9]{1})|([4]{1}[0-9]{1}\.[0-9]{1})$" required>
                         </div>
                         {% if status_message != None %}
                         <div class="alert alert-primary" role="alert">
@@ -124,10 +125,6 @@
                 }
             }
             Vue.component('paginate', VuejsPaginate)
-            //Vue.filter('br_to_lf', function (value) {
-            //    var regexp = /&lt;br&gt;/g;
-            //    return value.replace(regexp, '\n');
-            //})
             new Vue({
                 el: '#app',
                 delimiters: ["[[", "]]"],
