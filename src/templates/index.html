@@ -16,31 +16,25 @@
         <script src="/static/js/vuejs-pagenate_2.1.0.js"></script>
         <script src="/static/js/d3.v5.min.js"></script>
         <script src="/static/js/c3.min.js"></script>
-
         <!-- My Custom script tags -->
         <script type="text/javascript">
-            function test(){
-                null;
-            }
+            $(function (){
+                $("create_data_btn").on('click', function(){
+                    const form_obj = $("#create_data_form_id");
+                    //エラーチェック
+                    if (!form_obj.reportValidity()) {
+                        return false;
+                    }
+                    form_obj.submit();
+                })
+            });
         </script>
         <title>体温測定</title>
     </head>
     <body>
-        <div class="container" id="app">
+        <div class="container mt-1" id="app">
             <div class="row">
-                <div class="col-6">
-                    <table class="table table-hover table-stripe table-bordered table-md">
-                        <thead class="thead-dark">
-                            <th>測定日</th>
-                            <th>測定結果</th>
-                        </thead>
-                        <tbody>
-                            <tr v-for="item in items">
-                                <td>[[item.MEASURE_DATE]]</td>
-                                <td>[[item.MEASURE_RESULT]]</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="col-5">
                     <paginate
                         :page-count="getPageCount"
                         :page-range="3"
@@ -58,6 +52,49 @@
                         >
                     </paginate>
                 </div>
+                <div class="col-7">
+                    <h2>体温測定システム</h2>
+                </div>
+                <div class="col-6">
+                    <table class="table table-hover table-stripe table-bordered table-sm">
+                        <thead class="thead-dark">
+                            <th>測定日</th>
+                            <th>体温</th>
+                        </thead>
+                        <tbody>
+                            <tr v-for="item in getItems">
+                                <td>[[item.MEASURE_DATE]]</td>
+                                <td>[[item.BODY_HEAT]]</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-6">
+                    <form action="/create_data" method="POST" name="create_data_form" id="create_data_form_id">
+                        <div class="form-group">
+                            <label for="measure_date_id">測定日</label>
+                            <input type="date" name="measure_date" id="measure_date_id" 
+                                   class="form-control" min="2020-01-01" 
+                                   placeholder="日付を入力してください" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="body_heat_id">体温(35.0～49.9の範囲内で入力可能)</label>
+                            <input type="text" name="body_heat" id="body_heat_id" 
+                                   class="form-control" placeholder="体温を入力してください。(小数点第一位まで)"
+                                   pattern="^[3-4]{1}[05-9]{1}\.[0-9]{1}$" required>
+                        </div>
+                        {% if status_message != None %}
+                        <div class="alert alert-primary" role="alert">
+                            {{status_message}}
+                        </div>
+                        {% endif %}
+                        <div class="text-right">
+                            <button class="btn btn-primary" id="create_data_btn">
+                                <i class="oi oi-cloud-upload"></i> 登録
+                            </button>
+                        </div>
+                    </form>
+                </div>
                 <div class="col-12">
                     <div id="chart"></div>
                 </div>
@@ -66,31 +103,31 @@
         <script>
             var items = [];
             var measure_date_list = ["日付"]
-            var measure_result_list = ["測定結果"]
+            var body_heat_list = ["体温"]
             //1ページあたりに表示するデータ数
             var par_page = 5;
             {% if measure_list != None %}
                 {% for measure in measure_list %}
                     items.push({"MEASURE_DATE":"{{measure.MEASURE_DATE}}"
-                               ,"MEASURE_RESULT":"{{measure.MEASURE_RESULT}}" + "℃"
+                               ,"BODY_HEAT":"{{measure.BODY_HEAT}}" + "℃"
                                });
                     measure_date_list.push("{{measure.MEASURE_DATE}}")
-                    measure_result_list.push("{{measure.MEASURE_RESULT}}")
+                    body_heat_list.push("{{measure.BODY_HEAT}}")
                 {% endfor %}
             {% endif %}
             //最後のページの件数がpar_page未満になる場合は空データを作成
             if(items.length % par_page > 0){
                 for(var i=0; i < items.length % par_page; i++){
                     items.push({"MEASURE_DATE":"　"
-                               ,"MEASURE_RESULT":"　"
+                               ,"BODY_HEAT":"　"
                                });
                 }
             }
             Vue.component('paginate', VuejsPaginate)
-            Vue.filter('br_to_lf', function (value) {
-                var regexp = /&lt;br&gt;/g;
-                return value.replace(regexp, '\n');
-            })
+            //Vue.filter('br_to_lf', function (value) {
+            //    var regexp = /&lt;br&gt;/g;
+            //    return value.replace(regexp, '\n');
+            //})
             new Vue({
                 el: '#app',
                 delimiters: ["[[", "]]"],
@@ -124,9 +161,9 @@
                     type: 'bar', // 棒グラフ
                     columns: [ // データ
                         measure_date_list,
-                        measure_result_list
+                        body_heat_list
                     ],
-                    x: '日付', // データ x を x軸ラベルにする
+                    x: '日付', // x軸ラベルにする
                     xFormat: '%Y%m%d%H%M%S' // X軸の元の書式 (%Y/%m/%d %H:%M:%S など)
                 },
                 bar: {
@@ -143,8 +180,10 @@
                             position: 'outer-center'
                         },
                         tick: {
-                            culling: false, // x軸ラベルの途中省略をしない
-                            format: '%Y/%m' // X軸の表示書式 (%Y/%m/%d %H:%M:%S など)
+                            culling: false
+                           ,format: '%Y/%m' // X軸の表示書式 (%Y/%m/%d %H:%M:%S など)
+                           //,rotate: 10
+
                         },
                     },
                     y: {
@@ -152,16 +191,22 @@
                         label: {
                             text: '体温',
                             position: 'outer-middle'
-                        },
-                        tick: {
+                        }
+                       ,tick: {
                             format: function (d) {
-                                     return new Intl.NumberFormat('ja').format(d) + "℃"; } // Y軸ラベルの書式
-                        },
+                                        return new Intl.NumberFormat('ja').format(d) + "℃"; 
+                                    } // Y軸ラベルの書式
+                          // ,count: 7 //これは目盛設定に使える
+                        }
+                       ,max: 40    //目盛の最大値
+                       ,min: 35.5  //目盛の最小値
+                       //,padding: {top: 0, bottom: 0} 
                     }
                 },
                 grid: {
                     y: {
                         show: true // Y軸グリッド表示
+                       
                     }
                 },
                 legend: {
